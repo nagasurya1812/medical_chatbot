@@ -1,14 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
 import axios from "axios";
+import confetti from "canvas-confetti"; 
 import "./App.css"; 
-import botAvatar from "./images/bot (2).jpeg"; // Add your bot avatar image
-import userAvatar from "./images/human.jpeg"; // Add your user avatar image
+import botAvatar from "./images/bot (2).jpeg"; 
+import userAvatar from "./images/human.jpeg"; 
 
 function App() {
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef(null);
+
+  useEffect(() => {
+    confetti({
+      particleCount: 100,
+      spread: 80,
+      origin: { y: 0.6},
+    });
+  }, []);
 
   const sendMessage = async () => {
     if (!message.trim()) return;
@@ -37,42 +46,55 @@ function App() {
   }, [messages]);
 
   return (
-    <div className="chat-container">
-      <h1 className="chat-title">Medical Chat Bot</h1>
-      <p className="chat-subtitle">Clarify your medical-related doubts here</p>
+    <div className="app-container">
+      {/* Header */}
+      <header className="header">Gale Encyclopedia of Medicine</header>
 
-      <div className="chat-box">
-        {messages.map((msg, index) => (
-          <div key={index} className={`message-container ${msg.sender}`}>
-            <img
-              src={msg.sender === "bot" ? botAvatar : userAvatar}
-              alt="avatar"
-              className="avatar"
-            />
-            <div className="message">{msg.text}</div>
-          </div>
-        ))}
-        {loading && (
-          <div className="message-container bot">
-            <img src={botAvatar} alt="avatar" className="avatar" />
-            <div className="message">...</div>
-          </div>
-        )}
-        <div ref={chatEndRef} />
+      {/* Main Chat Section */}
+      <div className="chat-container">
+        <h1 className="chat-title">Medical Chat Bot</h1>
+        
+     <p className="chat-subtitle">
+          Clarify your medical-related doubts here! 🤔💡🩺
+      </p>
+
+
+        <div className="chat-box">
+          {messages.map((msg, index) => (
+            <div key={index} className={`message-container ${msg.sender}`}>
+              <img
+                src={msg.sender === "bot" ? botAvatar : userAvatar}
+                alt="avatar"
+                className="avatar"
+              />
+              <div className="message">{msg.text}</div>
+            </div>
+          ))}
+          {loading && (
+            <div className="message-container bot">
+              <img src={botAvatar} alt="avatar" className="avatar" />
+              <div className="message">...</div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+
+        <div className="input-area">
+          <input
+            type="text"
+            placeholder="Type a message..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+          />
+          <button onClick={sendMessage} disabled={loading}>
+            &#9658;
+          </button>
+        </div>
       </div>
 
-      <div className="input-area">
-        <input
-          type="text"
-          placeholder="Type a message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-        />
-        <button onClick={sendMessage} disabled={loading}>
-          Send
-        </button>
-      </div>
+      {/* Footer */}
+      <footer className="footer">&copy; Reserved by NAGASURYA 2025-2026</footer>
     </div>
   );
 }

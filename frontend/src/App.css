@@ -1,86 +1,87 @@
 /* General Styles */
 body {
-  font-family: "Arial", sans-serif;
-  background-color: #f4f4f4;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(to top, rgb(140, 241, 140), rgb(210, 202, 202)); 
+  margin: 0;
+  padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  margin: 0;
 }
 
-/* Chat Container */
-.chat-container {
-  width: 350px;
-  background: #ffffff;
+
+/* Main Container */
+.app-container {
+  width: 100%;
+  max-width: 450px;
+  background: white;
+  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
   border-radius: 10px;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  padding: 10px;
+}
+
+/* Header */
+.header {
+  background: #4caf50;
+  color: white;
+  padding: 15px;
   text-align: center;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+/* Chat Section */
+.chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 15px;
 }
 
 /* Chat Title */
 .chat-title {
+  text-align: center;
   font-size: 20px;
-  font-weight: bold;
   margin-bottom: 5px;
-  color: #007bff;
 }
 
-/* Chat Subtitle */
 .chat-subtitle {
+  text-align: center;
   font-size: 14px;
   color: gray;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 
 /* Chat Box */
 .chat-box {
-  max-height: 400px;
+  flex: 1;
   overflow-y: auto;
+  max-height: 400px;
   padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  background: #f9f9f9;
   display: flex;
   flex-direction: column;
-  background: #f9f9f9;
-  scroll-behavior: smooth;
-  flex-grow: 1;
+  gap: 10px;
 }
 
 /* Message Container */
 .message-container {
   display: flex;
   align-items: center;
-  margin-bottom: 10px;
+  gap: 10px;
 }
 
 .message-container.user {
-  flex-direction: row-reverse;
+  justify-content: flex-end;
 }
 
-/* Message */
-.message {
-  max-width: 70%;
-  padding: 10px;
-  border-radius: 15px;
-  font-size: 14px;
-  word-wrap: break-word;
-}
-
-/* Bot Message */
-.message-container.bot .message {
-  background: #e0e0e0;
-  color: black;
-  border-radius: 15px 15px 15px 5px;
-}
-
-/* User Message */
-.message-container.user .message {
-  background: #007bff;
-  color: white;
-  border-radius: 15px 15px 5px 15px;
+.message-container.bot {
+  justify-content: flex-start;
 }
 
 /* Avatar */
@@ -88,57 +89,72 @@ body {
   width: 35px;
   height: 35px;
   border-radius: 50%;
-  margin: 0 8px;
+}
+
+/* Message Box */
+.message {
+  max-width: 70%;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 14px;
+  word-wrap: break-word;
+}
+
+.message-container.user .message {
+  background: #4caf50;
+  color: white;
+  border-top-right-radius: 0;
+}
+
+.message-container.bot .message {
+  background: #e0e0e0;
+  color: black;
+  border-top-left-radius: 0;
+}
+
+/* Typing Indicator */
+.message-container.bot .message::after {
+  content: attr(data-text);
 }
 
 /* Input Area */
 .input-area {
   display: flex;
   padding: 10px;
-  border-top: 1px solid #ccc;
+  border-top: 1px solid #ddd;
   background: white;
 }
 
 .input-area input {
-  flex-grow: 1;
-  padding: 8px;
-  border: none;
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
   border-radius: 5px;
-  font-size: 14px;
   outline: none;
-  border: 1px solid #ccc;
+  font-size: 14px;
 }
 
 .input-area button {
-  margin-left: 8px;
-  padding: 8px 12px;
+  background: #4caf50;
   border: none;
-  background: #007bff;
   color: white;
-  border-radius: 5px;
+  padding: 10px 15px;
+  margin-left: 10px;
   cursor: pointer;
-  transition: 0.3s;
-}
-
-.input-area button:hover {
-  background: #0056b3;
+  font-size: 18px;
+  border-radius: 5px;
 }
 
 .input-area button:disabled {
-  background: #a0c4ff;
+  background: gray;
   cursor: not-allowed;
 }
 
-/* Scrollbar Styling */
-.chat-box::-webkit-scrollbar {
-  width: 5px;
-}
-
-.chat-box::-webkit-scrollbar-thumb {
-  background: #888;
-  border-radius: 10px;
-}
-
-.chat-box::-webkit-scrollbar-thumb:hover {
-  background: #555;
+/* Footer */
+.footer {
+  text-align: center;
+  padding: 10px;
+  background: #4caf50;
+  color: white;
+  font-size: 12px;
 }
