@@ -1,11 +1,11 @@
 sentence-transformers==2.2.2
 langchain
 flask
+flask-cors
 pypdf
 python-dotenv
-pinecone[grpc]
+pinecone-client
 langchain-pinecone
 langchain_community
 langchain_openai
 langchain_experimental
--e .
