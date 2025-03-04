@@ -5,9 +5,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
 from pinecone import Pinecone
-from langchain.vectorstores import Pinecone as PineconeVectorStore
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.memory import ChatMessageHistory
+from langchain_community.vectorstores import Pinecone as PineconeVectorStore
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.chat_message_histories import ChatMessageHistory
 
 # Load environment variables
 load_dotenv()
@@ -29,9 +29,12 @@ model = genai.GenerativeModel("gemini-1.5-pro-latest")
 # Initialize Pinecone
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
-if INDEX_NAME not in [index_info['name'] for index_info in pc.list_indexes()]:
+# Check if index exists in Pinecone
+existing_indexes = [index_info['name'] for index_info in pc.list_indexes()]
+if INDEX_NAME not in existing_indexes:
     raise ValueError(f"❌ Index '{INDEX_NAME}' not found in Pinecone. Check your Pinecone console.")
 
+# Load Retriever
 retriever = PineconeVectorStore.from_existing_index(
     INDEX_NAME,
     HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
