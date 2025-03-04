@@ -15,6 +15,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = "medicalbot"
 
+# Check if API keys are set
 if not GOOGLE_API_KEY or not PINECONE_API_KEY:
     raise ValueError("❌ Missing API keys! Check your .env file.")
 
@@ -97,4 +98,4 @@ def chat():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))  # Render assigns a port dynamically
-    app.run(host="0.0.0.0", port=port, debug=True)
+    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
