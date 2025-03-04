@@ -6,7 +6,7 @@ pinecone-client
 langchain
 langchain-pinecone
 langchain_community
-google-generativea
+google-generativeai
 langchain_openai
 langchain_experimental
 sentence-transformers
