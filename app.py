@@ -21,7 +21,7 @@ app = Flask(__name__)
 CORS(app)
 
 genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel("gemini-pro")
+model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
