@@ -9,6 +9,7 @@ from langchain.vectorstores import Pinecone as PineconeVectorStore
 from langchain.embeddings import HuggingFaceEmbeddings
 from langchain.memory import ChatMessageHistory
 
+# Load environment variables
 load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
@@ -17,12 +18,15 @@ INDEX_NAME = "medicalbot"
 if not GOOGLE_API_KEY or not PINECONE_API_KEY:
     raise ValueError("❌ Missing API keys! Check your .env file.")
 
+# Initialize Flask app
 app = Flask(__name__)
 CORS(app)
 
+# Configure Gemini AI
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
+# Initialize Pinecone
 pc = Pinecone(api_key=PINECONE_API_KEY)
 
 if INDEX_NAME not in [index_info['name'] for index_info in pc.list_indexes()]:
@@ -89,4 +93,5 @@ def chat():
     return jsonify({"response": response})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 5000))  # Render assigns a port dynamically
+    app.run(host="0.0.0.0", port=port, debug=True)
