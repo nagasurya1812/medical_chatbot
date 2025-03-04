@@ -15,7 +15,7 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = "medicalbot"
 
-# Check if API keys are set
+# Check API keys
 if not GOOGLE_API_KEY or not PINECONE_API_KEY:
     raise ValueError("❌ Missing API keys! Check your .env file.")
 
@@ -83,6 +83,11 @@ def custom_rag_chain(query, session_id):
     history.add_ai_message(response)
 
     return response
+
+@app.route("/", methods=["GET"])
+def home():
+    """Return a simple JSON response for the root route."""
+    return jsonify({"message": "Welcome to the Medical Chatbot!"})
 
 @app.route("/chat", methods=["POST"])
 def chat():
