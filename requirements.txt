@@ -1,13 +1,10 @@
 flask
 flask-cors
-pypdf
 python-dotenv
-pinecone-client<3.0.0  # ⬅️ Pin to compatible version for LangChain
-langchain
-langchain-pinecone
-langchain_community
 google-generativeai
-langchain_openai
-langchain_experimental
-sentence-transformers
-huggingface_hub
+pinecone-client
+langchain
+langchain-community
+langchain-pinecone
+langchain-huggingface
+transformers
