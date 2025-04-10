@@ -4,9 +4,9 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
-from pinecone import Pinecone, Index
-from langchain_community.vectorstores import Pinecone as PineconeVectorStore
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from pinecone import Pinecone as PineconeClient
+from langchain_pinecone import PineconeVectorStore
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.chat_message_histories import ChatMessageHistory
 
 # Load environment variables
@@ -15,38 +15,30 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = "medicalbot"
 
-# Check API keys
 if not GOOGLE_API_KEY or not PINECONE_API_KEY:
-    raise ValueError("❌ Missing API keys! Check your .env file.")
+    raise ValueError("Missing GOOGLE_API_KEY or PINECONE_API_KEY in .env")
 
-# Initialize Flask app
+# Flask setup
 app = Flask(__name__)
 CORS(app)
 
-# Configure Gemini AI
+# Gemini setup
 genai.configure(api_key=GOOGLE_API_KEY)
 model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
-# Initialize Pinecone client
-pc = Pinecone(api_key=PINECONE_API_KEY)
+# Pinecone setup
+pc = PineconeClient(api_key=PINECONE_API_KEY)
+if INDEX_NAME not in [idx['name'] for idx in pc.list_indexes()]:
+    raise ValueError(f"Index '{INDEX_NAME}' not found in Pinecone.")
 
-# Check if index exists
-existing_indexes = [index_info['name'] for index_info in pc.list_indexes()]
-if INDEX_NAME not in existing_indexes:
-    raise ValueError(f"❌ Index '{INDEX_NAME}' not found in Pinecone. Check your Pinecone console.")
-
-# Load the Pinecone index
+# Load Pinecone Index and retriever
 pinecone_index = pc.Index(INDEX_NAME)
-
-# Load Retriever
-retriever = PineconeVectorStore(
-    index=pinecone_index,
+retriever = PineconeVectorStore.from_existing_index(
+    index_name=INDEX_NAME,
     embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2"),
-    text_key="text"  # Ensure this matches the metadata key in your Pinecone data
 )
-print("✅ Retriever loaded successfully!")
 
-# In-memory chat history (Replace with persistent store if needed)
+# In-memory chat histories
 chat_histories = {}
 
 def get_chat_history(session_id):
@@ -60,28 +52,24 @@ def generate_response_with_retry(prompt, max_retries=3, delay=5):
             response = model.generate_content(prompt)
             return response.text
         except genai.RateLimitError:
-            print(f"⚠️ Rate limit reached. Retrying in {delay} seconds... (Attempt {attempt + 1})")
+            print(f"Rate limit hit. Retrying... ({attempt + 1})")
             time.sleep(delay)
-    return "❌ Error: Rate limit exceeded. Please try again later."
+    return "Rate limit exceeded. Try again later."
 
 def custom_rag_chain(query, session_id):
     history = get_chat_history(session_id)
-    retrieved_docs = retriever.as_retriever().invoke(query)
+    docs = retriever.similarity_search(query, k=4)
     past_messages = "\n".join([f"{msg.type}: {msg.content}" for msg in history.messages])
 
-    if retrieved_docs:
-        retrieved_text = "\n\n".join([doc.page_content for doc in retrieved_docs])
-        prompt = f"Chat History:\n{past_messages}\n\nBased on the following medical references, answer the question:\n\n{retrieved_text}\n\nQuestion: {query}"
+    if docs:
+        context = "\n\n".join([doc.page_content for doc in docs])
+        prompt = f"Chat History:\n{past_messages}\n\nBased on the medical docs below, answer:\n\n{context}\n\nQuestion: {query}"
     else:
-        print("⚠️ No relevant documents found. Answering from general knowledge...")
         prompt = f"Chat History:\n{past_messages}\n\nQuestion: {query}"
 
     response = generate_response_with_retry(prompt)
-
-    # Save to history
     history.add_user_message(query)
     history.add_ai_message(response)
-
     return response
 
 @app.route("/", methods=["GET"])
@@ -102,4 +90,4 @@ def chat():
 
 if __name__ == "__main__":
     port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True, use_reloader=False)
+    app.run(host="0.0.0.0", port=port, debug=True)
