@@ -2,7 +2,7 @@ flask
 flask-cors
 pypdf
 python-dotenv
-pinecone-client
+pinecone-client<3.0.0  # ⬅️ Pin to compatible version for LangChain
 langchain
 langchain-pinecone
 langchain_community
