@@ -18,7 +18,9 @@ INDEX_NAME = "medicalbot"
 
 # Flask setup
 app = Flask(__name__)
-CORS(app)
+
+# Enable CORS only for your frontend origin
+CORS(app, origins=["https://encyclopedia-medicine.onrender.com"])
 
 # Load Gemini model
 genai.configure(api_key=GOOGLE_API_KEY)
@@ -80,8 +82,16 @@ def custom_rag_chain(query, session_id):
 def home():
     return jsonify({"message": "Welcome to the Medical Chatbot!"})
 
-@app.route("/chat", methods=["POST"])
+@app.route("/chat", methods=["POST", "OPTIONS"])
 def chat():
+    if request.method == "OPTIONS":
+        # Flask-CORS should handle this, but explicitly return if needed
+        response = jsonify({})
+        response.headers.add("Access-Control-Allow-Origin", "https://encyclopedia-medicine.onrender.com")
+        response.headers.add("Access-Control-Allow-Methods", "POST, OPTIONS")
+        response.headers.add("Access-Control-Allow-Headers", "Content-Type")
+        return response
+
     data = request.json
     query = data.get("message", "")
     session_id = data.get("session_id", "default")
