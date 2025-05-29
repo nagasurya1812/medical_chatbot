@@ -20,12 +20,15 @@ INDEX_NAME = "medicalbot"
 app = Flask(__name__)
 CORS(app)
 
+# Load Gemini model
+genai.configure(api_key=GOOGLE_API_KEY)
+model = genai.GenerativeModel("gemini-1.5-pro-latest")
+
 # In-memory chat histories
 chat_histories = {}
 
-# Load Gemini model once
-genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-pro-latest")
+# Cache for retriever
+retriever_cache = None
 
 def get_chat_history(session_id):
     if session_id not in chat_histories:
@@ -42,18 +45,19 @@ def generate_response_with_retry(prompt, max_retries=3, delay=5):
             time.sleep(delay)
     return "Rate limit exceeded. Try again later."
 
-# Load Pinecone + embeddings lazily to reduce startup RAM
 def get_retriever():
-    embedding = HuggingFaceEmbeddings(model_name="intfloat/e5-small")  # Lighter model
-    pc = PineconeClient(api_key=PINECONE_API_KEY)
-    if INDEX_NAME not in [idx['name'] for idx in pc.list_indexes()]:
-        raise ValueError(f"Index '{INDEX_NAME}' not found in Pinecone.")
-    PineconeVectorStore._pinecone_index = pc.Index(INDEX_NAME)
-    retriever = PineconeVectorStore.from_existing_index(
-        index_name=INDEX_NAME,
-        embedding=embedding,
-    )
-    return retriever
+    global retriever_cache
+    if retriever_cache is None:
+        print("Initializing retriever...")
+        embedding = HuggingFaceEmbeddings(model_name="intfloat/e5-small")  # Light model
+        pc = PineconeClient(api_key=PINECONE_API_KEY)
+        if INDEX_NAME not in [idx['name'] for idx in pc.list_indexes()]:
+            raise ValueError(f"Index '{INDEX_NAME}' not found in Pinecone.")
+        retriever_cache = PineconeVectorStore.from_existing_index(
+            index_name=INDEX_NAME,
+            embedding=embedding,
+        )
+    return retriever_cache
 
 def custom_rag_chain(query, session_id):
     history = get_chat_history(session_id)
@@ -89,5 +93,5 @@ def chat():
     return jsonify({"response": response})
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 10000))  # important for Render
+    port = int(os.environ.get("PORT", 10000))  # Use 10000 or customize
     app.run(host="0.0.0.0", port=port)
