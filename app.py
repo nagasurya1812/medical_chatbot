@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import google.generativeai as genai
+
 from pinecone import Pinecone as PineconeClient
 from langchain_pinecone import PineconeVectorStore
 from langchain_huggingface import HuggingFaceEmbeddings
@@ -15,31 +16,16 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 INDEX_NAME = "medicalbot"
 
-if not GOOGLE_API_KEY or not PINECONE_API_KEY:
-    raise ValueError("Missing GOOGLE_API_KEY or PINECONE_API_KEY in .env")
-
 # Flask setup
 app = Flask(__name__)
 CORS(app)
 
-# Gemini setup
-genai.configure(api_key=GOOGLE_API_KEY)
-model = genai.GenerativeModel("gemini-1.5-pro-latest")
-
-# Pinecone setup
-pc = PineconeClient(api_key=PINECONE_API_KEY)
-if INDEX_NAME not in [idx['name'] for idx in pc.list_indexes()]:
-    raise ValueError(f"Index '{INDEX_NAME}' not found in Pinecone.")
-
-# Load Pinecone Index and retriever
-pinecone_index = pc.Index(INDEX_NAME)
-retriever = PineconeVectorStore.from_existing_index(
-    index_name=INDEX_NAME,
-    embedding=HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2"),
-)
-
 # In-memory chat histories
 chat_histories = {}
+
+# Load Gemini model once
+genai.configure(api_key=GOOGLE_API_KEY)
+model = genai.GenerativeModel("gemini-1.5-pro-latest")
 
 def get_chat_history(session_id):
     if session_id not in chat_histories:
@@ -56,8 +42,22 @@ def generate_response_with_retry(prompt, max_retries=3, delay=5):
             time.sleep(delay)
     return "Rate limit exceeded. Try again later."
 
+# Load Pinecone + embeddings lazily to reduce startup RAM
+def get_retriever():
+    embedding = HuggingFaceEmbeddings(model_name="intfloat/e5-small")  # Lighter model
+    pc = PineconeClient(api_key=PINECONE_API_KEY)
+    if INDEX_NAME not in [idx['name'] for idx in pc.list_indexes()]:
+        raise ValueError(f"Index '{INDEX_NAME}' not found in Pinecone.")
+    PineconeVectorStore._pinecone_index = pc.Index(INDEX_NAME)
+    retriever = PineconeVectorStore.from_existing_index(
+        index_name=INDEX_NAME,
+        embedding=embedding,
+    )
+    return retriever
+
 def custom_rag_chain(query, session_id):
     history = get_chat_history(session_id)
+    retriever = get_retriever()
     docs = retriever.similarity_search(query, k=4)
     past_messages = "\n".join([f"{msg.type}: {msg.content}" for msg in history.messages])
 
@@ -89,5 +89,5 @@ def chat():
     return jsonify({"response": response})
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=True)
+    port = int(os.environ.get("PORT", 10000))  # important for Render
+    app.run(host="0.0.0.0", port=port)
